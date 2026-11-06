@@ -1,0 +1,28 @@
+<resources>
+    <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">@color/arcanum_lav</item>
+        <item name="android:windowBackground">@color/arcanum_bg</item>
+        <item name="android:statusBarColor">@color/arcanum_bg</item>
+        <item name="android:navigationBarColor">@color/arcanum_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="AppDialog" parent="android:style/Theme.Material.Dialog.Alert">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">@color/arcanum_lav</item>
+        <item name="android:windowBackground">@drawable/bg_dialog</item>
+        <item name="android:textColorPrimary">@color/arcanum_text</item>
+        <item name="android:textColorSecondary">@color/arcanum_muted</item>
+        <item name="android:textColorHint">@color/arcanum_muted</item>
+        <item name="android:windowAnimationStyle">@style/AppDialogAnim</item>
+    </style>
+
+    <style name="AppDialogAnim" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/dialog_in</item>
+        <item name="android:windowExitAnimation">@anim/dialog_out</item>
+    </style>
+</resources>

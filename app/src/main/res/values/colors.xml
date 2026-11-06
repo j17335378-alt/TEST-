@@ -1,0 +1,12 @@
+<resources>
+    <!-- ARCANUM palette -->
+    <color name="arcanum_bg">#100B13</color>
+    <color name="arcanum_bg2">#200B2B</color>
+    <color name="arcanum_card">#351343</color>
+    <color name="arcanum_accent">#75416F</color>
+    <color name="arcanum_lav">#C39AB8</color>
+    <color name="arcanum_text">#E8DDE8</color>
+    <color name="arcanum_muted">#A990A6</color>
+    <color name="arcanum_border">#4B2A4F</color>
+    <color name="arcanum_icon_bg">#100B13</color>
+</resources>
