@@ -49,6 +49,8 @@ public class NativeHomeActivity extends Activity {
     private View splash;
     private String active = HOME;
     private static final int PICK_STUDIO = 7110;
+    private static final int CREATE_BACKUP = 7120;
+    private StudioContext.UriCallback backupCallback;
 
     private Store store;
     private StudioStore studioStore;
@@ -85,6 +87,9 @@ public class NativeHomeActivity extends Activity {
         w.setStatusBarColor(Ui.BG);
         w.setNavigationBarColor(Ui.BG);
         w.getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        // Data safety first: run pending data migrations (snapshot + rollback on failure) before any store reads data.
+        final MigrationRunner.Result migration = AppMigrations.run(this);
+        final int updatedFrom = AppUpdater.onStartup(this);
         store = new Store(this);
         studioStore = new StudioStore(this);
         studioCtx = new StudioContext(this, studioStore, new StudioContext.Host() {
@@ -123,6 +128,85 @@ public class NativeHomeActivity extends Activity {
         buildShell();
         showPage(HOME);
         if (state == null) showSplash();
+        afterStart(migration, updatedFrom);
+    }
+
+    // ------------------------------------------------------------------ updates
+
+    /** Post-launch notices: "updated", a failed migration, and a quiet check for a new version. */
+    private void afterStart(final MigrationRunner.Result migration, final int updatedFrom) {
+        container.postDelayed(() -> {
+            if (isFinishing()) return;
+            if (migration != null && !migration.ok) {
+                Ui.show(Ui.dialog(this).setTitle("تعذّر ترحيل البيانات")
+                        .setMessage("تمت إعادة بياناتك كما كانت ولم يُفقد شيء. يمكنك تصدير نسخة احتياطية من شاشة التحديثات.")
+                        .setPositiveButton("حسناً", null));
+            } else if (updatedFrom > 0) {
+                Ui.toast(this, "تم التحديث إلى " + AppUpdater.currentName(this) + " ✓ بياناتك كما هي");
+            }
+            if (AppUpdater.autoCheckDue(this)) {
+                AppUpdater.check(this, (info, error) -> {
+                    if (error == null && AppUpdater.isNewer(this, info) && !AppUpdater.wasDismissed(this, info)) {
+                        showUpdateNotice(info);
+                    }
+                });
+            } else {
+                AppUpdater.Info known = AppUpdater.lastKnown(this);
+                if (known != null && AppUpdater.isNewer(this, known) && !AppUpdater.wasDismissed(this, known)) {
+                    showUpdateNotice(known);
+                }
+            }
+        }, 1800);
+    }
+
+    private void showUpdateNotice(final AppUpdater.Info info) {
+        if (isFinishing()) return;
+        String msg = "الإصدار الحالي: " + AppUpdater.currentName(this) + "\nالإصدار الجديد: " + info.versionName;
+        if (!info.notes.isEmpty()) msg += "\n\nما الجديد:\n" + info.notes;
+        Ui.show(Ui.dialog(this).setTitle("تحديث جديد متوفر").setMessage(msg)
+                .setPositiveButton("تحديث الآن", (d, w) -> openUpdates())
+                .setNegativeButton("لاحقاً", (d, w) -> AppUpdater.dismiss(this, info)));
+    }
+
+    private void openUpdates() {
+        final UpdateScreen screen = new UpdateScreen(this, new UpdateScreen.Host() {
+            @Override
+            public void close() {
+                popOverlay();
+            }
+
+            @Override
+            public void pickSaveLocation(String fileName, StudioContext.UriCallback cb) {
+                backupCallback = cb;
+                try {
+                    Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("application/zip");
+                    i.putExtra(Intent.EXTRA_TITLE, fileName);
+                    startActivityForResult(i, CREATE_BACKUP);
+                } catch (Exception e) {
+                    backupCallback = null;
+                    Ui.toast(NativeHomeActivity.this, "تعذّر فتح منتقي الملفات على هذا الهاتف");
+                }
+            }
+
+            @Override
+            public void pickBackupFile(StudioContext.UriCallback cb) {
+                pickStudioFiles(new String[] {"application/zip", "application/x-zip-compressed", "application/octet-stream"},
+                        false, cb);
+            }
+
+            @Override
+            public void flushPending() {
+                if (studio != null) studio.flush();
+            }
+
+            @Override
+            public void restart() {
+                recreate();
+            }
+        });
+        pushOverlay(screen.build(), null, null);
     }
 
     private int dp(float v) {
@@ -303,6 +387,11 @@ public class NativeHomeActivity extends Activity {
             LinearLayout.LayoutParams st = new LinearLayout.LayoutParams(-1, -2);
             st.bottomMargin = dp(12);
             content.addView(Ui.sectionTitle(this, "ملفي الشخصي"), st);
+            boolean hasUpdate = AppUpdater.updateKnown(this);
+            addCard("التحديثات والنسخ الاحتياطي",
+                    hasUpdate ? "يتوفر إصدار جديد. الإصدار الحالي " + AppUpdater.currentName(this)
+                            : "الإصدار الحالي " + AppUpdater.currentName(this) + " · حدّث دون فقدان بياناتك",
+                    hasUpdate ? "عرض التحديث" : "فتح", this::openUpdates);
             addCard("إعدادات ARCANUM", "المظهر والتفضيلات", "الإعدادات",
                     () -> Ui.toast(this, "الإعدادات الأصلية قيد النقل"));
         }
@@ -643,6 +732,16 @@ public class NativeHomeActivity extends Activity {
                 picked.add(data.getData());
             }
             cb.onPicked(picked);
+            return;
+        }
+
+        if (requestCode == CREATE_BACKUP) {
+            StudioContext.UriCallback cb = backupCallback;
+            backupCallback = null;
+            if (cb == null || resultCode != RESULT_OK || data == null || data.getData() == null) return;
+            List<Uri> one = new ArrayList<>();
+            one.add(data.getData());
+            cb.onPicked(one);
             return;
         }
 

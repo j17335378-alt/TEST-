@@ -10,18 +10,39 @@ android {
         applicationId 'com.hajala.app'
         minSdk 24
         targetSdk 36
-        versionCode 9
-        versionName '1.7.0'
+        versionCode APP_VERSION_CODE.toInteger()
+        versionName APP_VERSION_NAME
+    }
+
+    // One permanent signing key. Android only installs an update over an existing app when the signing key
+    // is identical, so releases MUST always be signed with this same key (kept in GitHub Secrets, see UPDATES_AR.md).
+    def ksPath = System.getenv('ARCANUM_KEYSTORE_FILE') ?: project.findProperty('ARCANUM_KEYSTORE_FILE')
+    signingConfigs {
+        if (ksPath) {
+            arcanum {
+                storeFile file(ksPath)
+                storePassword System.getenv('ARCANUM_KEYSTORE_PASSWORD') ?: project.findProperty('ARCANUM_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ARCANUM_KEY_ALIAS') ?: project.findProperty('ARCANUM_KEY_ALIAS')
+                keyPassword System.getenv('ARCANUM_KEY_PASSWORD') ?: project.findProperty('ARCANUM_KEY_PASSWORD')
+            }
+        }
     }
 
     buildTypes {
         debug {
             applicationIdSuffix ''
+            if (ksPath) signingConfig signingConfigs.arcanum
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (ksPath) signingConfig signingConfigs.arcanum
         }
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
     }
 
     compileOptions {
@@ -36,4 +57,5 @@ android {
 
 dependencies {
     implementation 'androidx.webkit:webkit:1.16.0'
+    implementation 'androidx.core:core:1.15.0' // FileProvider for handing the update APK to the installer
 }

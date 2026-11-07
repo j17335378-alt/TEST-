@@ -253,6 +253,13 @@ final class StudioStore {
             defaultsSeeded = o.optBoolean("defaultsSeeded", false);
         } catch (Exception e) {
             loadError = "تعذّرت قراءة فهرس الأستوديو";
+            // Keep the unreadable file: the next save() would otherwise replace it with an empty index.
+            try {
+                File keep = new File(root, "index.corrupt-" + System.currentTimeMillis() + ".json");
+                java.nio.file.Files.copy(src.toPath(), keep.toPath());
+            } catch (Exception ignored) {
+                // best effort
+            }
         }
     }
 

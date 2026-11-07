@@ -1,9 +1,15 @@
 name: Build ARCANUM APK
 
+# Release flow:   git tag v1.7.0 && git push origin v1.7.0   ->  signed APK + update.json published as a GitHub Release.
+# The app reads update.json from the latest release to offer the update inside the app.
+# Manual run (workflow_dispatch) builds a signed APK as a downloadable artifact only; it does not publish.
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -18,6 +24,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Run update-system tests
+        run: bash scripts/test-core.sh
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
@@ -29,13 +38,92 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
+      - name: Restore the permanent signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.ARCANUM_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ARCANUM_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ARCANUM_KEY_ALIAS }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ]; then
+            echo "::error::Signing secrets are missing. Add ARCANUM_KEYSTORE_B64, ARCANUM_KEYSTORE_PASSWORD and ARCANUM_KEY_ALIAS (see UPDATES_AR.md). Refusing to build with a random key because such an APK cannot update the installed app."
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/arcanum.jks"
+          echo "ARCANUM_KEYSTORE_FILE=$RUNNER_TEMP/arcanum.jks" >> "$GITHUB_ENV"
+          echo "ARCANUM_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ARCANUM_KEY_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ARCANUM_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
 
-      - name: Upload APK
+      - name: Read version and check the tag matches it
+        run: |
+          CODE=$(grep '^APP_VERSION_CODE=' gradle.properties | cut -d= -f2)
+          NAME=$(grep '^APP_VERSION_NAME=' gradle.properties | cut -d= -f2)
+          echo "VERSION_CODE=$CODE" >> "$GITHUB_ENV"
+          echo "VERSION_NAME=$NAME" >> "$GITHUB_ENV"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v${NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match APP_VERSION_NAME=${NAME} in gradle.properties"
+            exit 1
+          fi
+
+      - name: Build signed release APK
+        run: gradle --no-daemon assembleRelease
+
+      - name: Verify signature and package the release files
+        run: |
+          APK_SRC=app/build/outputs/apk/release/app-release.apk
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          "$APKSIGNER" verify --verbose --print-certs "$APK_SRC" | tee "$RUNNER_TEMP/cert.txt"
+          mkdir -p dist
+          APK="dist/ARCANUM-${VERSION_NAME}.apk"
+          cp "$APK_SRC" "$APK"
+          SHA=$(sha256sum "$APK" | cut -d' ' -f1)
+          SIZE=$(stat -c%s "$APK")
+          python3 - <<PY
+          import json, re
+          name = "${VERSION_NAME}"
+          notes = ""
+          try:
+              txt = open("CHANGELOG.md", encoding="utf-8").read()
+              m = re.search(r"^## +v?" + re.escape(name) + r"\b[^\n]*\n(.*?)(?=^## |\Z)", txt, re.S | re.M)
+              if m: notes = m.group(1).strip()
+          except FileNotFoundError:
+              pass
+          open("dist/release-notes.md", "w", encoding="utf-8").write(notes or "ARCANUM " + name)
+          json.dump({
+              "versionCode": int("${VERSION_CODE}"),
+              "versionName": name,
+              "apkUrl": "https://github.com/${{ github.repository }}/releases/download/v" + name + "/ARCANUM-" + name + ".apk",
+              "sha256": "${SHA}",
+              "size": int("${SIZE}"),
+              "notes": notes,
+          }, open("dist/update.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+          PY
+          cat dist/update.json
+          {
+            echo "### ARCANUM ${VERSION_NAME} (code ${VERSION_CODE})"
+            echo "SHA-256: \`${SHA}\`"
+            echo "Signing certificate (must be IDENTICAL in every release):"
+            echo '```'
+            grep -i "SHA-256 digest" "$RUNNER_TEMP/cert.txt" | head -1
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "dist/ARCANUM-${VERSION_NAME}.apk" dist/update.json \
+            --title "ARCANUM ${VERSION_NAME}" \
+            --notes-file dist/release-notes.md \
+            --latest
+
+      - name: Upload APK artifact (manual runs)
+        if: github.ref_type != 'tag'
         uses: actions/upload-artifact@v4
         with:
-          name: arcanum-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: arcanum-release-apk
+          path: dist/ARCANUM-*.apk
           if-no-files-found: error
           retention-days: 14
