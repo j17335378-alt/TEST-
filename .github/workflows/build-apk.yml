@@ -48,7 +48,17 @@ jobs:
             echo "::error::Signing secrets are missing. Add ARCANUM_KEYSTORE_B64, ARCANUM_KEYSTORE_PASSWORD and ARCANUM_KEY_ALIAS (see UPDATES_AR.md). Refusing to build with a random key because such an APK cannot update the installed app."
             exit 1
           fi
-          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/arcanum.jks"
+          echo "ARCANUM_KEYSTORE_B64 length: ${#KEYSTORE_B64} characters (for the key made for ARCANUM this should be 5648)"
+          # tolerate spaces / line breaks / stray characters that phone copy-paste can add
+          if ! printf '%s' "$KEYSTORE_B64" | tr -cd 'A-Za-z0-9+/=' | base64 -d > "$RUNNER_TEMP/arcanum.jks"; then
+            echo "::error::ARCANUM_KEYSTORE_B64 is damaged or incomplete. Copy the WHOLE content of keystore.b64 again (one single line, nothing missing) and save the secret again."
+            exit 1
+          fi
+          if ! keytool -list -keystore "$RUNNER_TEMP/arcanum.jks" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null 2>&1; then
+            echo "::error::The signing key could not be opened: check ARCANUM_KEYSTORE_PASSWORD (exact, no spaces), ARCANUM_KEY_ALIAS (must be: arcanum) and that ARCANUM_KEYSTORE_B64 is complete."
+            exit 1
+          fi
+          echo "Signing key OK"
           echo "ARCANUM_KEYSTORE_FILE=$RUNNER_TEMP/arcanum.jks" >> "$GITHUB_ENV"
           echo "ARCANUM_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
           echo "ARCANUM_KEY_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
