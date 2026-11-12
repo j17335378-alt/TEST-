@@ -1,0 +1,443 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: Tajawal;
+  src: url("/fonts/tajawal_regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Tajawal;
+  src: url("/fonts/tajawal_medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Tajawal;
+  src: url("/fonts/tajawal_bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Cinzel;
+  src: url("/fonts/cinzel_semibold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --color-bg: #100b17;
+  --color-surface: #1b1423;
+  --color-fg: #f6eef8;
+  --color-muted: #b9a9c2;
+  --color-accent: #d8b265;
+  --color-accent-fg: #1a1208;
+  --color-border: #392943;
+  --font-sans: "Tajawal", "Segoe UI", Tahoma, sans-serif;
+  --font-display: "Cinzel", "Times New Roman", serif;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+}
+
+:root[data-theme="light"] {
+  --color-bg: #f7f3f8;
+  --color-surface: #fffaff;
+  --color-fg: #2a1d31;
+  --color-muted: #756780;
+  --color-accent: #8d649e;
+  --color-accent-fg: #fffaff;
+  --color-border: #e4d9e8;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  html[data-theme="light"] {
+    color-scheme: light;
+  }
+
+  html[data-fontscale="sm"] {
+    font-size: 14px;
+  }
+
+  html[data-fontscale="lg"] {
+    font-size: 18px;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    opacity: 0.6;
+  }
+}
+
+@layer components {
+  .field {
+    width: 100%;
+    border-radius: 0.9rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    color: var(--color-fg);
+    padding: 0.75rem 0.9rem;
+  }
+
+  .btn-fill {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+    padding: 0.75rem 1.1rem;
+    font-weight: 700;
+  }
+
+  .btn-line {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-fg);
+    padding: 0.5rem 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .card-btn {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.85rem;
+    border-radius: 1.25rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    padding: 0.9rem 1rem;
+    text-align: start;
+  }
+
+  .card-btn svg {
+    width: 1.35rem;
+    height: 1.35rem;
+    flex: none;
+    color: var(--color-accent);
+  }
+
+  .card-btn span {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .card-btn small {
+    color: var(--color-muted);
+  }
+
+  .chip {
+    display: inline-flex;
+    min-height: 2.5rem;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    padding: 0.35rem 0.85rem;
+    color: var(--color-muted);
+  }
+
+  .chip-on {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ---------- Notebooks ---------- */
+.book-cover {
+  display: flex;
+  width: 100%;
+  min-height: 11rem;
+  overflow: hidden;
+  border-radius: 0.4rem 1.1rem 1.1rem 0.4rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  text-align: start;
+  transition: transform 0.15s ease;
+}
+
+.book-cover:active {
+  transform: scale(0.98);
+}
+
+.book-spine {
+  width: 0.7rem;
+  flex: none;
+  box-shadow: inset -2px 0 4px rgb(0 0 0 / 0.25);
+}
+
+.book-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.8rem 0.85rem;
+}
+
+.paper-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.25rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.paper-swatch-on {
+  border-color: var(--color-accent);
+  color: var(--color-fg);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+.paper-sample {
+  display: block;
+  width: 100%;
+  height: 2.6rem;
+  border-radius: 0.4rem;
+  --line: 0.65rem;
+}
+
+.color-dot {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.color-dot-on {
+  outline-color: var(--color-fg);
+}
+
+.notebook {
+  position: relative;
+  border-radius: 0.5rem 1.2rem 1.2rem 0.5rem;
+  background: var(--cover, var(--color-accent));
+  padding: 0.7rem 0.7rem 0.7rem 0.7rem;
+  padding-inline-start: 1.8rem;
+  box-shadow:
+    0 10px 24px rgb(0 0 0 / 0.28),
+    inset 0 0 0 1px rgb(255 255 255 / 0.12);
+}
+
+.notebook-rings {
+  position: absolute;
+  inset-block: 1.2rem;
+  inset-inline-start: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.notebook-rings i {
+  display: block;
+  width: 0.95rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(#e9e4ef, #8f8a96);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+}
+
+.notebook-sheet {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0.3rem 0.8rem 0.8rem 0.3rem;
+  background: #f6f0e4;
+  color: #2a1d31;
+  box-shadow: inset 6px 0 10px -6px rgb(0 0 0 / 0.3);
+}
+
+.notebook-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem 0.3rem;
+  font-size: 0.75rem;
+  color: #7a6a82;
+}
+
+.notebook-head span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notebook-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #ddd2c0;
+  padding: 0.25rem 0.5rem;
+  color: #6d5878;
+}
+
+.page-nav {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 999px;
+  color: #6d5878;
+}
+
+.page-nav:disabled {
+  opacity: 0.3;
+}
+
+.page-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--color-border);
+  padding: 0;
+  box-sizing: content-box;
+  border: 0.45rem solid transparent;
+  background-clip: padding-box;
+}
+
+.page-dot-on {
+  background-color: var(--color-accent);
+}
+
+/* Paper backgrounds. --line drives both the lines and the text line-height. */
+.paper-wrap,
+.paper-sample {
+  --line: 2rem;
+  --ink: #c9bba6;
+  background-color: #f6f0e4;
+}
+
+.paper-sample {
+  --line: 0.65rem;
+  border: 1px solid #ddd2c0;
+}
+
+.paper-ruled {
+  background-image: linear-gradient(transparent calc(var(--line) - 1px), var(--ink) 1px);
+  background-size: 100% var(--line);
+}
+
+.paper-grid {
+  background-image:
+    linear-gradient(var(--ink) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ink) 1px, transparent 1px);
+  background-size: var(--line) var(--line);
+}
+
+.paper-dots {
+  background-image: radial-gradient(circle, #a89a86 1.2px, transparent 1.5px);
+  background-size: var(--line) var(--line);
+  background-position: calc(var(--line) / 2) calc(var(--line) / 2);
+}
+
+.paper-plain {
+  background-image: none;
+}
+
+.paper-wrap {
+  position: relative;
+}
+
+.paper-wrap.paper-ruled::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 2.2rem;
+  width: 1px;
+  background: #d98a8a;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.paper-text {
+  display: block;
+  width: 100%;
+  height: 24rem;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  background-attachment: local;
+  color: #2a1d31;
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: var(--line);
+  padding: 0 1rem;
+  padding-inline-start: 3rem;
+}
+
+.paper-grid .paper-text,
+.paper-dots .paper-text {
+  padding-inline-start: 1rem;
+}
+
+.paper-text::placeholder {
+  color: #9b8da3;
+}
+
+.page-in {
+  animation: page-in 0.28s ease-out;
+  transform-origin: right center;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: perspective(700px) rotateY(-14deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-in {
+    animation: none;
+  }
+}

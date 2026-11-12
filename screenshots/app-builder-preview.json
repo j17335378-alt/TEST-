@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "أركانوم",
+      "hasCanvas": false,
+      "bodyTextLen": 71,
+      "bodyTextHash": "8a9edd59ac2f5103768087e2ad937cbbd9750b4cb4f836154030d173a1e13bf9",
+      "bodyTextPrefix": "ARCANUM أركانوم جارٍ فتح ملفات المشروع… الرئيسية المكتبة الاستود",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "أركانوم",
+      "hasCanvas": false,
+      "bodyTextLen": 290,
+      "bodyTextHash": "d7c043302f22f524a5879b2b0e1c75a5d741f79b71b62227547d33fc6e66a47e",
+      "bodyTextPrefix": "ARCANUM أركانوم ملفي الإعدادات الاسم المظهر داكن فاتح ملفات المش",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
