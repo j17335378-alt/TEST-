@@ -35,7 +35,7 @@ jobs:
           grep -n "tanstackStart" vite.config.ts
 
       - name: Build web app
-        run: node scripts/with-app-env.mjs vite build
+        run: npx vite build
 
       - name: Collect static files
         run: |
