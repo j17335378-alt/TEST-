@@ -1,0 +1,66 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Patch Vite config for static build
+        run: |
+          node -e '
+            const fs = require("fs");
+            let s = fs.readFileSync("vite.config.ts", "utf8");
+            s = s.replace("tanstackStart()", "tanstackStart({ spa: { enabled: true, prerender: { outputPath: \"/index\" } } })");
+            s = s.replace("command === \"build\" || isPreview", "false");
+            fs.writeFileSync("vite.config.ts", s);
+          '
+          grep -n "tanstackStart" vite.config.ts
+
+      - name: Build web app
+        run: node scripts/with-app-env.mjs vite build
+
+      - name: Collect static files
+        run: |
+          rm -rf www && mkdir www
+          if [ -d dist/client ]; then cp -r dist/client/. www/; fi
+          if [ ! -f www/index.html ]; then
+            f=$(find www -maxdepth 1 -name "*.html" | head -1)
+            [ -n "$f" ] && cp "$f" www/index.html
+          fi
+          cp -rn public/. www/ || true
+          ls -la www
+          test -f www/index.html
+
+      - name: Add Capacitor Android
+        run: |
+          npm install --no-save --no-audit --no-fund @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npx cap init Arcanum com.arcanum.app --web-dir www
+          npx cap add android
+          npx cap sync android
+
+      - name: Build APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arcanum-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
